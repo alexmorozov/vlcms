@@ -1,1 +1,2 @@
 cherrypy==8.1.0
+pyyaml==3.12
