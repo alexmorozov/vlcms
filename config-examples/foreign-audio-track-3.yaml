@@ -1,0 +1,9 @@
+vlc:
+  binary: '"C:\Program Files (x86)\VideoLAN\VLC\vlc.exe"'
+  listen: 127.0.0.1
+  start_port: 4212
+web:
+  listen: 0.0.0.0
+instances:
+  - '{filename}'
+  - '--directx-audio-device="Default" --audio-track=3 --vout none {filename}'
