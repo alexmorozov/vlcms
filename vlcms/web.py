@@ -16,8 +16,6 @@ class Pages(object):
     def __init__(self, queue):
         self.queue = queue
         self.base_dir = os.path.dirname(__file__)
-        with open(os.path.join(self.base_dir, 'index.html')) as f:
-            self.index_page = f.read()
 
     @cherrypy.expose
     def index(self):

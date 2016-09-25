@@ -3,7 +3,6 @@ import multiprocessing as mp
 from multiprocessing.queues import Empty
 import subprocess
 import telnetlib
-import time
 
 from utils import ignore_sigint
 
@@ -14,12 +13,11 @@ class Worker(mp.Process):
     """
     A VLC instance running until the shutdown event is fired.
     """
-    def __init__(self, binary, args_template, filename, host, port, shutdown,
+    def __init__(self, binary, arguments, host, port, shutdown,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.binary = binary
-        self.args_template = args_template
-        self.filename = filename
+        self.arguments = arguments
         self.host = host
         self.port = port
         self.shutdown = shutdown
@@ -32,9 +30,8 @@ class Worker(mp.Process):
 
     @property
     def cmdline(self):
-        args = self.args_template.format(filename=self.filename)
         return '{bin} {control} {args}'.format(
-            bin=self.binary, control=self.control_options, args=args)
+            bin=self.binary, control=self.control_options, args=self.arguments)
 
     def run(self):
         log.info('Starting VLC on port {}...'.format(self.port))
@@ -85,18 +82,15 @@ class Controller(mp.Process):
         ignore_sigint()
         while not self.shutdown.wait(self.poll_timeout):
             try:
-                raw_cmd = self.queue.get(False)
-                for cmd in raw_cmd.split(', '):
-                    if 'sleep' in cmd:
-                        time.sleep(int(cmd.split(' ')[-1]))
-                    if 'jump' in cmd:
-                        if self.master:
-                            self.send_command(cmd)
-                            self.emit_sync()
-                        else:
-                            pass  # instead of jumping slaves will sync
-                    else:
+                cmd = self.queue.get(False)
+                if 'jump' in cmd:
+                    if self.master:
                         self.send_command(cmd)
+                        self.emit_sync()
+                    else:
+                        pass  # instead of jumping slaves will sync
+                else:
+                    self.send_command(cmd)
             except Empty:
                 pass
 
