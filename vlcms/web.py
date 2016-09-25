@@ -38,6 +38,8 @@ class WebServer(mp.Process):
         self.shutdown = shutdown
 
     def run(self):
+        cherrypy.log.error_log.propagate = False
+        cherrypy.log.access_log.propagate = False
         cherrypy.tree.mount(Pages(self.queue))
         cherrypy.config.update({
             'engine.autoreload.on': False,

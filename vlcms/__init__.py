@@ -13,7 +13,7 @@ from vlc import Worker, Controller
 
 
 LOG_FORMAT = '[%(levelname)s/%(name)s] %(message)s'
-logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
 log = logging.getLogger(__name__)
 
 
@@ -24,13 +24,16 @@ def run(filename, config):
     host = config['vlc']['listen']
     control_queues = []
     web_queue = mp.Queue()
+    sync_queue = mp.Queue()
 
     for index, args in enumerate(config['instances']):
         port = start_port + index
         Worker(binary, args, filename, host, port, shutdown).start()
 
         queue = mp.Queue()
-        Controller(host, port, queue, shutdown).start()
+        master = True if index == 0 else False
+        Controller(host, port, queue, shutdown,
+                   sync_queue, master=master).start()
         control_queues.append(queue)
 
     WebServer(web_queue, shutdown).start()
@@ -43,6 +46,14 @@ def run(filename, config):
                     q.put(cmd)
             except Empty:
                 pass
+
+            try:
+                timestamp = sync_queue.get(False)
+                for queue in control_queues:
+                    queue.put('seek {}'.format(timestamp))
+            except Empty:
+                pass
+
     except KeyboardInterrupt:
         log.info('Caught SIGINT, stopping the workers gracefully...')
         shutdown.set()

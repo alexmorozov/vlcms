@@ -6,4 +6,5 @@ web:
   listen: 0.0.0.0
 instances:
   - '{filename}'
-  - '--directx-audio-device="Default" --audio-track=2 --vout none {filename}'
+  - '--directx-audio-device="Default" --audio-track=2  {filename}'
+#- '--directx-audio-device="Default" --audio-track=2 --vout none {filename}'
